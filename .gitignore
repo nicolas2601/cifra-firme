@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/TestResults/
+docs/archify/*.visual-check*
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+**/__pycache__/
+frontend/node_modules/
+frontend/dist/
+.playwright-cli/
+.local/
+web.config
+*.pfx
+*.pem

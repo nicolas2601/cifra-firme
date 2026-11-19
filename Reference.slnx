@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Reference.Api/Reference.Api.csproj" />
+    <Project Path="src/Reference.Payroll/Reference.Payroll.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Reference.Api.Tests/Reference.Api.Tests.csproj" />
+    <Project Path="tests/Reference.Payroll.Tests/Reference.Payroll.Tests.csproj" />
+  </Folder>
+</Solution>
