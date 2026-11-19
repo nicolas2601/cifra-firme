@@ -25,10 +25,11 @@ Este procedimiento instala la aplicación en **Windows/IIS + SQL Server**. Es di
 ```bash
 npm --prefix frontend ci
 VITE_DEMO=false npm --prefix frontend run build
-dotnet publish src/Reference.Api -c Release --no-self-contained -o .local/somee
+dotnet publish src/Reference.Api -c Release -r win-x64 --no-self-contained \
+  -p:AspNetCoreHostingModel=OutOfProcess -o .local/somee
 ```
 
-Comprobá que estén `web.config`, `Reference.Api.dll` y `wwwroot/index.html` en la carpeta publicada. Esta publicación requiere el runtime de ASP.NET Core 10 de Somee. Si el hosting no lo ofrece para el sitio, verificá arquitectura y cuota antes de intentar la variante autocontenida (`-r win-x64 --self-contained true` para un sitio x64). [Modos de despliegue de Somee](https://www.somee.com/DOKA/Help/Article/214/How_should_I_deploy_ASP.NET_Core_applications%3F_(Deployment_Modes)).
+Comprobá que estén `web.config`, `Reference.Api.dll` y `wwwroot/index.html` en la carpeta publicada. El sitio de demo se verificó en IIS en modo `outofprocess`; el modo `inprocess` devolvió `500.30` en ese servidor. Esta publicación x64 requiere el runtime de ASP.NET Core 10 de Somee. Si tu sitio usa otra arquitectura o no tiene el runtime, verificá la arquitectura y la cuota antes de cambiar la publicación. [Modos de despliegue de Somee](https://www.somee.com/DOKA/Help/Article/214/How_should_I_deploy_ASP.NET_Core_applications%3F_(Deployment_Modes)).
 
 En la configuración privada del sitio prepará:
 
@@ -40,6 +41,8 @@ En la configuración privada del sitio prepará:
 | `Database__Initialize` | `false`, porque aplicaste el SQL antes. |
 | `Demo__Seed` | `false`. El seeder completo no se ejecuta en hosting. |
 | `Bootstrap__Username` / `Bootstrap__Password` | Solo durante el primer arranque. Elegí una contraseña exclusiva para el sitio. |
+
+Si la conexión SQL informa que el nombre del certificado no coincide, verificá con el proveedor el nombre DNS que figura en el certificado del servidor SQL. Cuando el alias de la base difiere de ese nombre, configurá `HostNameInCertificate` con el nombre verificado y conservá `Encrypt=True;TrustServerCertificate=False`. No uses el nombre de otro servidor.
 
 Si tu panel no ofrece variables, agregalas en el `web.config` **de la publicación local**, dentro del elemento `<aspNetCore>` ya generado. Convertí su cierre `/>` en un par de etiquetas si hace falta. Los valores de ejemplo no sirven como credenciales; escapá caracteres especiales de XML (por ejemplo, `&amp;`). No hagas commit de esa copia.
 
@@ -69,4 +72,4 @@ Subí **el contenido** de `.local/somee` con File Manager o FTPS. `web.config` y
 
 **Si falla:** `503` en `/health/ready` indica que la verificación de la base no pasó: comprobá conexión, permisos y migraciones. Para 500/502 de arranque revisá el runtime, `web.config` y los logs privados del panel. Si no carga la web, revisá `wwwroot/index.html` y sus archivos estáticos. No publiques logs ni cadenas de conexión.
 
-La publicación local se verifica sin IIS. Esta guía no implica que exista un sitio desplegado en Somee.
+**Verificación real:** la [demo de Cifra Firme](https://cifrafirme.somee.com/) está desplegada en el plan gratuito. Si el panel indica que el script SQL terminó, comprobá también `__EFMigrationsHistory` en la base asignada antes de arrancar. Para actualizar binarios bloqueados por IIS, usá `app_offline.htm` durante la copia y retiralo al terminar.

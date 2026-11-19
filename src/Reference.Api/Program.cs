@@ -67,6 +67,29 @@ app.UseExceptionHandler();
 if (!local) app.UseHsts();
 app.UseHttpsRedirection();
 app.UseDefaultFiles();
+app.Use(async (context, next) =>
+{
+    var file = app.Environment.WebRootFileProvider.GetFileInfo("index.html");
+    if (context.Request.Path != "/index.html" || !file.Exists ||
+        !(HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
+    {
+        await next(context);
+        return;
+    }
+    var response = context.Response;
+    response.ContentType = "text/html; charset=utf-8";
+    response.Headers.CacheControl = "no-store";
+    response.Headers.XContentTypeOptions = "nosniff";
+    response.Headers.ContentSecurityPolicy = "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    response.Headers["Referrer-Policy"] = "no-referrer";
+    if (HttpMethods.IsGet(context.Request.Method))
+    {
+        // Some hosting proxies append HTML; stream the document without a fixed wire length.
+        await response.StartAsync(context.RequestAborted);
+        await using var content = file.CreateReadStream();
+        await content.CopyToAsync(response.Body, context.RequestAborted);
+    }
+});
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -75,10 +98,6 @@ app.UseStaticFiles(new StaticFileOptions
         headers.XContentTypeOptions = "nosniff";
         if (ctx.Context.Request.Path.StartsWithSegments("/assets"))
             headers.CacheControl = "public, max-age=31536000, immutable";
-        if (ctx.File.Name != "index.html") return;
-        headers.CacheControl = "no-store";
-        headers.ContentSecurityPolicy = "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
-        headers["Referrer-Policy"] = "no-referrer";
     }
 });
 app.UseRouting();
